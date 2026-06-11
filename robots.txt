@@ -10,5 +10,5 @@ Allow: /
 User-agent: Bingbot
 Allow: /
 
-Sitemap: https://www.ganda-go.example.com/sitemap.xml
-Sitemap: https://www.ganda-go.example.com/rss.xml
+Sitemap: https://dongdaemun-massage.pages.dev/sitemap.xml
+Sitemap: https://dongdaemun-massage.pages.dev/rss.xml

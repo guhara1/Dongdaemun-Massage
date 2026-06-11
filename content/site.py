@@ -1,6 +1,6 @@
 # 사이트 공통 설정
-# 배포 도메인 확정 후 BASE_URL 을 실제 도메인으로 변경하세요.
-BASE_URL = "https://www.ganda-go.example.com"
+# 커스텀 도메인 연결 시 BASE_URL 을 새 도메인으로 변경 후 재빌드하세요.
+BASE_URL = "https://dongdaemun-massage.pages.dev"
 
 BRAND = "간다 GO"
 
