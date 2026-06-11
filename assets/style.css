@@ -668,3 +668,20 @@ th { background: var(--panel-2); color: var(--gold-soft); font-family: var(--ser
   .page-content section { padding: 26px 22px 22px; border-radius: 14px; }
   .cta { padding: 36px 20px; }
 }
+
+/* E-E-A-T 콘텐츠 책임 고지 */
+.content-byline {
+  margin-top: 48px;
+  padding: 18px 22px;
+  border: 1px solid rgba(200, 162, 94, 0.35);
+  border-left: 4px solid #c8a25e;
+  border-radius: 8px;
+  background: rgba(200, 162, 94, 0.06);
+}
+.content-byline p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: #5d5648;
+}
+.content-byline a { color: #8a6d3b; font-weight: 600; }

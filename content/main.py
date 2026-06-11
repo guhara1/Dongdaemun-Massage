@@ -10,6 +10,7 @@ _JSONLD = f"""<script type="application/ld+json">
   "telephone": "{PHONE}",
   "url": "{BASE_URL}/",
   "image": "{BASE_URL}/assets/og-image.png",
+  "logo": "{BASE_URL}/assets/icon-512.png",
   "description": "동대문구 전지역 방문 출장마사지·홈타이 예약 안내",
   "areaServed": {{
     "@type": "AdministrativeArea",

@@ -67,6 +67,30 @@ def render_breadcrumb(crumbs) -> str:
     return "".join(parts)
 
 
+def breadcrumb_jsonld(crumbs, canonical: str) -> str:
+    """BreadcrumbList 구조화 데이터 — 검색 결과의 경로 표기를 돕는다."""
+    if not crumbs:
+        return ""
+    items = [{"@type": "ListItem", "position": 1, "name": "홈",
+              "item": BASE_URL.rstrip("/") + "/"}]
+    for i, (label, href) in enumerate(crumbs, start=2):
+        item = {"@type": "ListItem", "position": i, "name": label}
+        item["item"] = (BASE_URL.rstrip("/") + href) if href else canonical
+        items.append(item)
+    import json
+    data = {"@context": "https://schema.org", "@type": "BreadcrumbList",
+            "itemListElement": items}
+    return ('<script type="application/ld+json">'
+            + json.dumps(data, ensure_ascii=False)
+            + "</script>\n")
+
+
+# E-E-A-T: 모든 페이지 하단에 작성·검수 주체와 정정 채널을 명시한다.
+BYLINE = f"""<div class="content-byline">
+  <p><strong>콘텐츠 책임</strong> — 이 안내는 <a href="/about/">{BRAND} 운영팀</a>이 동대문구 예약 상담·방문 실무 기록을 바탕으로 작성하고, 게시 전 상담 실무자가 검수합니다. 사실과 다른 내용을 발견하시면 <a href="tel:{PHONE}">{PHONE_DISPLAY}</a>로 알려 주세요. 확인 후 바로잡습니다.</p>
+</div>"""
+
+
 def inject_toc(body: str):
     """본문 섹션(h2)에 id를 보장하고 좌측 목차 데이터를 만든다."""
     items = []
@@ -133,6 +157,7 @@ def render_page(page: dict) -> str:
     body, toc_items = inject_toc(body)
     toc_html = render_toc(toc_items)
     layout_cls = "page-layout has-toc" if toc_html else "page-layout"
+    extra_head = breadcrumb_jsonld(crumbs, canonical) + extra_head
 
     return f"""<!DOCTYPE html>
 <html lang="ko">
@@ -185,6 +210,7 @@ def render_page(page: dict) -> str:
       {render_breadcrumb(crumbs)}
       {h1_html}
       {body}
+      {BYLINE}
     </article>
   </div>
 </main>
