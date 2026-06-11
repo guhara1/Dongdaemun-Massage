@@ -3,6 +3,12 @@
 BASE_URL = "https://www.ganda-go.example.com"
 
 BRAND = "간다 GO"
+
+# 콘텐츠를 수정·추가한 날 갱신하세요 — sitemap lastmod와 RSS pubDate에 쓰입니다.
+SITE_UPDATED = "2026-06-11"
+
+# IndexNow 인증 키 — 빌드 시 루트에 {키}.txt 파일이 생성됩니다.
+INDEXNOW_KEY = "3b76049f44eb7f600ede86c4984e54be"
 PHONE = "0508-202-4719"
 PHONE_DISPLAY = "0508-202-4719"
 

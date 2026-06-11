@@ -49,8 +49,35 @@ python3 build.py
 - 모든 페이지 본문은 페이지별 고유 작성 (지역명만 바꾼 복붙 없음)
 - 후기·고객센터·약관은 실콘텐츠가 채워지기 전까지 의도적 noindex
 
+## 색인·인덱싱 인프라
+
+빌드 시 자동 생성됩니다.
+
+| 파일 | 용도 |
+|---|---|
+| `sitemap.xml` | 전 인덱스 페이지 + `lastmod` (구글·네이버·빙 공통) |
+| `rss.xml` | 최신 글 우선 49개 아이템 — 네이버 서치어드바이저 RSS 제출용 |
+| `robots.txt` | Googlebot·Yeti(네이버)·Bingbot 명시 허용 + sitemap/rss 위치 |
+| `{IndexNow키}.txt` | IndexNow 키 검증 파일 (키는 `content/site.py`) |
+
+### 글 올릴 때마다 즉시 색인 통보
+
+```bash
+python3 build.py                      # 재빌드 (sitemap·rss 갱신)
+python3 scripts/notify_index.py      # sitemap 전체 URL을 IndexNow로 통보 (빙·네이버)
+python3 scripts/notify_index.py /magazine/new-post/   # 특정 URL만 통보
+```
+
+- **IndexNow**: 빙·네이버 등 참여 엔진에 즉시 전파. 별도 설정 불필요(키 파일이 배포에 포함됨).
+- **구글**: IndexNow 미참여. 기본 경로는 Search Console sitemap 제출이며,
+  서비스 계정 키를 두면(`GOOGLE_SA=키.json`) Indexing API 통보도 함께 실행됩니다.
+  단, Indexing API의 공식 지원 대상은 구인·라이브방송 페이지라는 점은 유의하세요.
+- 구형 sitemap ping(google.com/ping 등)은 2023~2024년 폐지되어 사용하지 않습니다.
+- 콘텐츠를 수정한 날에는 `content/site.py`의 `SITE_UPDATED`를 갱신하세요(sitemap `lastmod` 반영).
+
 ## 배포 전 해야 할 일
 
 1. `content/site.py`의 `BASE_URL`을 실제 도메인으로 변경
-2. `python3 build.py` 재실행 (canonical·sitemap·robots.txt에 반영됨)
-3. Google Search Console에 `sitemap.xml` 제출
+2. `python3 build.py` 재실행 (canonical·sitemap·robots.txt·rss.xml에 반영됨)
+3. Google Search Console·네이버 서치어드바이저에 `sitemap.xml` 제출, 네이버에는 `rss.xml`도 제출
+4. 배포 확인 후 `python3 scripts/notify_index.py` 실행 (IndexNow 첫 통보)

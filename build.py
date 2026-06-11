@@ -16,7 +16,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from content import PAGES
-from content.site import (BASE_URL, BRAND, NAV, PHONE, PHONE_DISPLAY)
+from content.site import (BASE_URL, BRAND, INDEXNOW_KEY, NAV, PHONE,
+                          PHONE_DISPLAY, SITE_UPDATED)
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 MIN_INDEX_CHARS = 2000
@@ -178,6 +179,7 @@ def render_page(page: dict) -> str:
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="{BASE_URL.rstrip('/')}/assets/og-image.png">
+<link rel="alternate" type="application/rss+xml" title="{BRAND} 새 글 피드" href="/rss.xml">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
@@ -275,9 +277,19 @@ def render_page(page: dict) -> str:
 """
 
 
+def rfc822(date_str: str) -> str:
+    """YYYY-MM-DD → RSS pubDate(RFC 822, KST)."""
+    from datetime import datetime, timezone, timedelta
+    dt = datetime.strptime(date_str, "%Y-%m-%d").replace(
+        hour=9, tzinfo=timezone(timedelta(hours=9))
+    )
+    return dt.strftime("%a, %d %b %Y %H:%M:%S %z")
+
+
 def build() -> None:
     report = []
-    sitemap_urls = []
+    sitemap_urls = []   # (url, lastmod)
+    rss_items = []      # (date, title, url, desc)
 
     for page in PAGES:
         path = page["path"]  # "" 또는 "dongdaemun-gu/sinseol-dong/" 형태
@@ -289,13 +301,17 @@ def build() -> None:
 
         chars = text_length(page["body"])
         noindex = page.get("noindex", False) or chars < MIN_INDEX_CHARS
+        lastmod = page.get("date", SITE_UPDATED)
         if not noindex:
-            sitemap_urls.append(BASE_URL.rstrip("/") + "/" + path)
+            url = BASE_URL.rstrip("/") + "/" + path
+            sitemap_urls.append((url, lastmod))
+            rss_items.append((lastmod, page["title"], url, page["desc"]))
         report.append((path or "/", chars, "noindex" if noindex else "index"))
 
-    # sitemap.xml
+    # sitemap.xml — lastmod 포함 (크롤 우선순위 판단을 돕는다)
     urls = "\n".join(
-        f"  <url><loc>{u}</loc></url>" for u in sitemap_urls
+        f"  <url><loc>{u}</loc><lastmod>{d}</lastmod></url>"
+        for u, d in sitemap_urls
     )
     with open(os.path.join(ROOT, "sitemap.xml"), "w", encoding="utf-8") as f:
         f.write(
@@ -304,12 +320,48 @@ def build() -> None:
             f"{urls}\n</urlset>\n"
         )
 
-    # robots.txt
+    # rss.xml — 네이버 서치어드바이저 RSS 제출용. 최신 글이 위로 오도록 정렬.
+    rss_items.sort(key=lambda x: x[0], reverse=True)
+    base = BASE_URL.rstrip("/")
+    items = "\n".join(
+        "  <item>\n"
+        f"    <title>{html.escape(t)}</title>\n"
+        f"    <link>{u}</link>\n"
+        f"    <guid isPermaLink=\"true\">{u}</guid>\n"
+        f"    <description>{html.escape(d)}</description>\n"
+        f"    <pubDate>{rfc822(dt)}</pubDate>\n"
+        "  </item>"
+        for dt, t, u, d in rss_items
+    )
+    with open(os.path.join(ROOT, "rss.xml"), "w", encoding="utf-8") as f:
+        f.write(
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">\n'
+            "<channel>\n"
+            f"  <title>{html.escape(BRAND)} — 동대문 출장마사지·홈타이 안내</title>\n"
+            f"  <link>{base}/</link>\n"
+            "  <description>동대문구 전지역 방문 관리 안내와 매거진 새 글 피드입니다.</description>\n"
+            "  <language>ko</language>\n"
+            f"  <lastBuildDate>{rfc822(SITE_UPDATED)}</lastBuildDate>\n"
+            f'  <atom:link href="{base}/rss.xml" rel="self" type="application/rss+xml"/>\n'
+            f"{items}\n"
+            "</channel>\n</rss>\n"
+        )
+
+    # robots.txt — 구글·네이버(Yeti)·빙 모두 허용, sitemap·rss 위치 명시
     with open(os.path.join(ROOT, "robots.txt"), "w", encoding="utf-8") as f:
         f.write(
             "User-agent: *\nAllow: /\n\n"
-            f"Sitemap: {BASE_URL.rstrip('/')}/sitemap.xml\n"
+            "User-agent: Googlebot\nAllow: /\n\n"
+            "User-agent: Yeti\nAllow: /\n\n"
+            "User-agent: Bingbot\nAllow: /\n\n"
+            f"Sitemap: {base}/sitemap.xml\n"
+            f"Sitemap: {base}/rss.xml\n"
         )
+
+    # IndexNow 키 파일 — https://도메인/{키}.txt 로 접근 가능해야 한다
+    with open(os.path.join(ROOT, f"{INDEXNOW_KEY}.txt"), "w", encoding="utf-8") as f:
+        f.write(INDEXNOW_KEY + "\n")
 
     # .nojekyll (GitHub Pages)
     open(os.path.join(ROOT, ".nojekyll"), "w").close()
